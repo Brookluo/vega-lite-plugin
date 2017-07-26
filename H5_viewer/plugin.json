@@ -1,0 +1,14 @@
+{
+  "name": "VegaLite Graph_generator",
+    "description": "Generate graph for H5 files using VegaLite",
+    "url": "http://girder.readthedocs.io/en/latest/vega-lite",
+    "version": "0.1.0",
+    "npm": {
+        "dependencies": {
+            "vega": "^3.38.0",
+            "vega-lite": "^2.6.0",
+            "vega-embed": "^3.19.0",
+            "vtk.js": "2.24.1"
+        }
+    }
+}

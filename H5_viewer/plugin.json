@@ -5,10 +5,9 @@
     "version": "0.1.0",
     "npm": {
         "dependencies": {
-            "vega": "^3.38.0",
-            "vega-lite": "^2.6.0",
-            "vega-embed": "^3.19.0",
-            "vtk.js": "2.24.1"
+            "vega": "3.0.0-beta.38",
+            "vega-lite": "2.0.0-beta.6"
+
         }
     }
 }

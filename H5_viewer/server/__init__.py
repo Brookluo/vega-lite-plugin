@@ -5,7 +5,6 @@ import requests
 import pandas as pd
 from vega import VegaLite as vl
 import tempfile
-
 from girder.utility.model_importer import ModelImporter
 from girder.api.rest import Resource
 from girder.api.rest import
@@ -13,8 +12,9 @@ from girder import events
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
 from girder.constants import AccessType, TokenScope
+from girder.api.rest import boundHandler
 
-class H5Graph(Resource):
+class HDF5Item(Resource):
 
     #TODO: Access Control here, right now test only use the public
     # should be user according to requirement
@@ -23,27 +23,23 @@ class H5Graph(Resource):
         Description('') #TODO
         .modelParam('id', 'The item ID',
                     model = 'item', level = AccessType.READ, paramType = 'path')
-        .param('selection', 'The selection of either phase or amp to show',
-                required = True)
-        .param('dash', 'syntax for the name of data-sets ',
-                required = False, dataType = 'boolean', default = False)
-        .param('l_value', 'syntax for the name of data-sets',
-                required = False, default = 2)
-        .param('m_value', 'syntax for the name of data-sets',
-                required = False, default = 2)
+        .param()
         .errorResponse() #TODO
     )
-    def graph_gene(self, selection, dash, l_value, m_value):
-        data = getData(self, selection, dash, l_value, m_value) #TODO
-        with open(tempfile.TemporaryFile) as tmp:
-            create_json(tmp, data)
-            vega_obj = graph_generator(tmp)
-            #TODO: to generate the graph, using either vega obj or json
-        return vega_obj
+    def getH5(self, item):
+        files = list(ModelImporter.model('item').childFiles(item))
+        retval = []
+        for i in enumerate(files):
+            if h5py.File(i,'r').dims <= 1:
+                retval['data'] = getData(i, 'amp')
+                retval['meta'] = getMeta(i)
+                retval.append(i)
+        return retval
 
 
-
-
+def getMeta(name):
+    h5f = h5py.File(name,'r')
+    return dict(zip(list(h5f.attrs), list(h5f.attrs.values())))
 
 
 def getData(name, selection, dash = False, l_value = 2, m_value = 2):
@@ -58,8 +54,8 @@ def getData(name, selection, dash = False, l_value = 2, m_value = 2):
     else:
         ds_name = "{}_l{}_m-{}".format(selection, l_value, m_value)
 
-    print(ds_name)
-    print(name)
+    #print(ds_name)
+    #print(name)
 
     data_set = h5f[ds_name]
     x_value = list(x for x in data_set['X'])
@@ -68,15 +64,11 @@ def getData(name, selection, dash = False, l_value = 2, m_value = 2):
     if len(x_value) != len(y_value):
         return None
 
-    #print(len(x_value))
-    #print(len(y_value))
-
     data = {}
-
     data['values'] = list({'x' : x_value.pop(), 'y' : y_value.pop()} for num in range(len(x_value)))
     #data['names'] = ds_name
-
     return data
+
 
 def create_json(target, data, full_syntax = True, mark = "line"):
     if full_syntax:
@@ -93,6 +85,7 @@ def create_json(target, data, full_syntax = True, mark = "line"):
     if jfile != None:
         with open(target, 'w') as write_file:
             json.dump(jfile, write_file)
+
 
 #graph generator
 def graph_generator(f, width = 400, height = 400):
@@ -129,15 +122,19 @@ def graph_generator(f, width = 400, height = 400):
         #graph.display()
         return graph
 
+def process_file(f):
+    f['data'] = getData(f, 'amp')
+    f['metadata'] = getMeta(f)
+    return ModelImporter.model('file').save(f)
+
+@access.public
+@boundHandler
 def handler(event):
-
-
-
-
+    process_file(event.info['file'])
 
 #TODO: find the way to solve the options
 def load(info):
-    events.bind('data_process', 'Vega-lite visulization', handler)
+    events.bind('data_process', 'H5_viewer', handler)
     h5_create  = H5Graph()
-    info['apiRoot'].item.route('GET', (':id', 'dicom'),
-        h5_create.graph_gene)
+    info['apiRoot'].item.route('GET', (':id', 'hdf5'),
+        h5_create.getH5)

@@ -1,0 +1,10 @@
+table.table.table-condensed.table-hover
+  thead
+    tr
+      th Key
+      th Value
+    tbody
+      each tag in tags
+        tr
+          td = tag.name
+          td = tag.value

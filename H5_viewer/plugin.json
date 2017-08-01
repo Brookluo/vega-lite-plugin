@@ -6,7 +6,10 @@
     "npm": {
         "dependencies": {
             "vega": "3.0.0-beta.38",
-            "vega-lite": "2.0.0-beta.6"
+            "vega-lite": "2.0.0-beta.6",
+            "vega.js": "3.0.0-rc2",
+            "vega-lite.js": "2.0.0-beta.10",
+            "vega-embed.js": "3.0.0-beta.19"
 
         }
     }
